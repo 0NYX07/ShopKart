@@ -54,10 +54,10 @@ const createProduct = async (req, res) => {
     }
 };
 
-// Controller to get all products (supports ?search= and ?category=)
+// Controller to get all products (supports ?search=, ?category=, and ?sort=)
 const getAllProducts = async (req, res) => {
     try {
-        const { search, category } = req.query;
+        const { search, category, sort } = req.query;
 
         // Build MongoDB query dynamically
         const query = {};
@@ -73,8 +73,16 @@ const getAllProducts = async (req, res) => {
             query.category = category.trim();
         }
 
-        // Find matching products in MongoDB
-        const products = await Product.find(query).sort({ createdAt: -1 });
+        // Build sort configuration dynamically
+        let sortConfig = { createdAt: -1 };
+        if (sort === 'price_asc') {
+            sortConfig = { price: 1 };
+        } else if (sort === 'price_desc') {
+            sortConfig = { price: -1 };
+        }
+
+        // Find matching products in MongoDB with sorting
+        const products = await Product.find(query).sort(sortConfig);
 
         return res.status(200).json({
             success: true,
