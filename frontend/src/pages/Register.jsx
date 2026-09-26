@@ -5,7 +5,6 @@ import api from '../services/api';
 function Register() {
   const navigate = useNavigate();
 
-  // Controlled React state for form inputs
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -13,10 +12,10 @@ function Register() {
     phone: ''
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Handle changes in input fields
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -24,26 +23,32 @@ function Register() {
     });
   };
 
-  // Handle form submission
+  const handleDemoFill = () => {
+    const randomSuffix = Math.floor(Math.random() * 900) + 100;
+    setFormData({
+      fullName: 'Alex Morgan',
+      email: `alex${randomSuffix}@example.com`,
+      password: 'password123',
+      phone: '+91 98765 43210'
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     const { fullName, email, password, phone } = formData;
 
-    // 1. Basic validation: check empty fields
     if (!fullName || !email || !password || !phone) {
       setError('All fields are required.');
       return;
     }
 
-    // 2. Basic email validation
     if (!email.includes('@')) {
       setError('Please enter a valid email address.');
       return;
     }
 
-    // 3. Password length validation
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
@@ -51,7 +56,6 @@ function Register() {
 
     try {
       setLoading(true);
-      // POST /customers/register using our configured axios api service
       await api.post('/customers/register', {
         fullName,
         email,
@@ -59,10 +63,8 @@ function Register() {
         phone
       });
 
-      // On successful registration, redirect to login page
       navigate('/login');
     } catch (err) {
-      // Show simple error message if API fails
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
@@ -70,64 +72,135 @@ function Register() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>ShopKart Register</h2>
-        {error && <div className="error-message">{error}</div>}
+    <div className="auth-page-wrapper">
+      {/* Background Animated Floating Shapes */}
+      <div className="floating-shape shape-blue"></div>
+      <div className="floating-shape shape-red"></div>
+      <div className="floating-shape shape-yellow"></div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Full Name</label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="Enter your full name"
-            />
+      <div className="auth-card-modern">
+        {/* Brand Header */}
+        <div className="auth-header">
+          <Link to="/products" className="auth-brand-link">
+            <div className="brand-icon-wrapper">
+              <span className="dot dot-red"></span>
+              <span className="dot dot-blue"></span>
+              <span className="dot dot-yellow"></span>
+            </div>
+            <span className="brand-text">Shop<strong>Kart</strong></span>
+          </Link>
+          <h2>Create Customer Account</h2>
+          <p className="auth-subtitle">Join ShopKart for exclusive catalog discounts and speedy checkout</p>
+        </div>
+
+        {error && (
+          <div className="auth-alert-error shake-animation">
+            <span className="alert-icon">⚠️</span>
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group-modern">
+            <label htmlFor="fullName">Full Legal Name</label>
+            <div className="input-with-icon">
+              <span className="field-icon">👤</span>
+              <input
+                id="fullName"
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                placeholder="e.g. Alex Morgan"
+                required
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-            />
+          <div className="form-group-modern">
+            <label htmlFor="reg-email">Email Address</label>
+            <div className="input-with-icon">
+              <span className="field-icon">✉️</span>
+              <input
+                id="reg-email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="alex@example.com"
+                required
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter password (min 6 chars)"
-            />
+          <div className="form-group-modern">
+            <div className="form-label-row">
+              <label htmlFor="reg-password">Password</label>
+              <button 
+                type="button" 
+                className="btn-toggle-pw" 
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <div className="input-with-icon">
+              <span className="field-icon">🔒</span>
+              <input
+                id="reg-password"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Min. 6 characters"
+                required
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label>Phone Number</label>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter your phone number"
-            />
+          <div className="form-group-modern">
+            <label htmlFor="phone">Phone Number</label>
+            <div className="input-with-icon">
+              <span className="field-icon">📞</span>
+              <input
+                id="phone"
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+91 98765 43210"
+                required
+              />
+            </div>
           </div>
 
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? 'Registering...' : 'Register'}
+          <button type="submit" className="btn-auth-submit" disabled={loading}>
+            {loading ? (
+              <span className="spinner-submit">Creating Account...</span>
+            ) : (
+              <span>Complete Registration →</span>
+            )}
           </button>
         </form>
 
-        <p className="auth-switch">
-          Already have an account? <Link to="/login">Login</Link>
-        </p>
+        <div className="auth-quick-tools">
+          <button 
+            type="button" 
+            onClick={handleDemoFill}
+            className="btn-demo-creds"
+          >
+            💡 Auto-Fill Sample Data
+          </button>
+        </div>
+
+        <div className="auth-footer-links">
+          <p>
+            Already have an account? <Link to="/login">Sign In</Link>
+          </p>
+          <p className="guest-browse-link">
+            Or <Link to="/products">browse catalog as guest →</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
