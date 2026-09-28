@@ -1,51 +1,76 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addToWishlist, removeFromWishlist } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 function ProductCard({ product, initialInWishlist = false, onWishlistUpdate }) {
   const navigate = useNavigate();
+  const { cartItems, addToCartHandler } = useCart();
+
   const [inWishlist, setInWishlist] = useState(initialInWishlist);
-  const [saving, setSaving] = useState(false);
+  const [savingWishlist, setSavingWishlist] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [cartMsg, setCartMsg] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Check if current product is already in global cart state
+  const cartEntry = cartItems.find((item) => item.product?._id === product._id);
+  const quantityInCart = cartEntry ? cartEntry.quantity : 0;
 
   const handleViewDetails = () => {
     navigate(`/products/${product._id}`);
   };
 
-  // Lab 04: Handle Wishlist Toggle (Add / Remove)
+  // Lab 04: Wishlist Toggle Action
   const handleWishlistToggle = async () => {
-    if (saving) return; // Prevent duplicate clicks while request is running
-    setSaving(true);
+    if (savingWishlist) return;
+    setSavingWishlist(true);
     setErrorMessage('');
 
     try {
       if (inWishlist) {
-        // Call DELETE /wishlist/:productId
         await removeFromWishlist(product._id);
         setInWishlist(false);
       } else {
-        // Call POST /wishlist/:productId
         await addToWishlist(product._id);
         setInWishlist(true);
       }
 
-      // Trigger optional callback for parent components (e.g. updating Navbar badge)
       if (onWishlistUpdate) {
         onWishlistUpdate();
       }
     } catch (err) {
       if (err.response && err.response.status === 401) {
-        // Redirect unauthenticated user to login
         navigate('/login');
       } else if (err.response && err.response.status === 409) {
-        // Already in wishlist (409 Conflict)
         setInWishlist(true);
       } else {
-        setErrorMessage('Unable to save product. Please try again.');
+        setErrorMessage('Unable to save wishlist item.');
         setTimeout(() => setErrorMessage(''), 3000);
       }
     } finally {
-      setSaving(false);
+      setSavingWishlist(false);
+    }
+  };
+
+  // Lab 05: Add to Cart Action
+  const handleAddToCart = async () => {
+    if (addingToCart || product.stock === 0) return;
+    setAddingToCart(true);
+    setErrorMessage('');
+    setCartMsg('');
+
+    const result = await addToCartHandler(product._id);
+    setAddingToCart(false);
+
+    if (result && result.success) {
+      setCartMsg('Added to Cart!');
+      setTimeout(() => setCartMsg(''), 2500);
+    } else if (result && result.status === 401) {
+      navigate('/login');
+    } else {
+      setErrorMessage(result?.message || 'Could not add to cart');
+      setTimeout(() => setErrorMessage(''), 3000);
     }
   };
 
@@ -63,11 +88,11 @@ function ProductCard({ product, initialInWishlist = false, onWishlistUpdate }) {
         {/* Heart Wishlist Overlay Badge */}
         <button 
           onClick={handleWishlistToggle}
-          disabled={saving}
+          disabled={savingWishlist}
           className={`wishlist-heart-btn ${inWishlist ? 'saved' : ''}`}
           title={inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
         >
-          {saving ? '⏳' : inWishlist ? '♥' : '♡'}
+          {savingWishlist ? '⏳' : inWishlist ? '♥' : '♡'}
         </button>
       </div>
 
@@ -83,23 +108,21 @@ function ProductCard({ product, initialInWishlist = false, onWishlistUpdate }) {
           </span>
         </div>
 
-        {errorMessage && (
-          <div className="card-error-message">
-            {errorMessage}
-          </div>
-        )}
+        {/* Feedback messages */}
+        {cartMsg && <div className="card-success-message">{cartMsg}</div>}
+        {errorMessage && <div className="card-error-message">{errorMessage}</div>}
 
         <div className="product-card-actions">
           <button onClick={handleViewDetails} className="btn-view-details">
-            View Details
+            View
           </button>
           
           <button 
-            onClick={handleWishlistToggle} 
-            disabled={saving}
-            className={`btn-wishlist-action ${inWishlist ? 'btn-wishlist-saved' : ''}`}
+            onClick={handleAddToCart}
+            disabled={addingToCart || product.stock === 0}
+            className="btn-add-cart"
           >
-            {saving ? '⏳ Saving...' : inWishlist ? '♥ Saved' : '♡ Wishlist'}
+            {addingToCart ? 'Adding...' : quantityInCart > 0 ? `Add Another (${quantityInCart})` : 'Add to Cart'}
           </button>
         </div>
       </div>
