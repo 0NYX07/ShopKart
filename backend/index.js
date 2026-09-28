@@ -6,6 +6,7 @@ const cors = require('cors');
 const customerRoutes = require('./routes/customer.routes');
 const productRoutes = require('./routes/product.routes');
 const wishlistRoutes = require('./routes/wishlist.routes');
+const cartRoutes = require('./routes/cart.routes');
 const Product = require('./models/product.model');
 
 const app = express();
@@ -31,6 +32,9 @@ app.use('/products', productRoutes);
 
 // Mount routes under /wishlist
 app.use('/wishlist', wishlistRoutes);
+
+// Mount routes under /cart
+app.use('/cart', cartRoutes);
 
 // Basic root route
 app.get('/', (req, res) => {
