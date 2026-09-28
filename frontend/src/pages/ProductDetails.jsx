@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { getProductById } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 function ProductDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { addToCartHandler } = useCart();
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [cartMsg, setCartMsg] = useState('');
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -33,6 +40,26 @@ function ProductDetails() {
     }
   }, [id]);
 
+  const handleAddToCart = async () => {
+    if (!product || product.stock === 0 || adding) return;
+    setAdding(true);
+    setCartMsg('');
+    setActionError('');
+
+    const res = await addToCartHandler(product._id);
+    setAdding(false);
+
+    if (res && res.success) {
+      setCartMsg('Item added to cart!');
+      setTimeout(() => setCartMsg(''), 2500);
+    } else if (res && res.status === 401) {
+      navigate('/login');
+    } else {
+      setActionError(res?.message || 'Failed to add item to cart');
+      setTimeout(() => setActionError(''), 3000);
+    }
+  };
+
   return (
     <div>
       <Navbar />
@@ -47,14 +74,14 @@ function ProductDetails() {
         {/* Loading State */}
         {loading && (
           <div className="loading-state">
-            Loading products...
+            Loading product details...
           </div>
         )}
 
         {/* Error State */}
         {!loading && (error || !product) && (
           <div className="error-state">
-            Something went wrong while loading products.
+            Something went wrong while loading product details.
           </div>
         )}
 
@@ -88,12 +115,16 @@ function ProductDetails() {
                 <p>{product.description}</p>
               </div>
 
+              {cartMsg && <div className="card-success-message">{cartMsg}</div>}
+              {actionError && <div className="card-error-message">{actionError}</div>}
+
               <div className="product-details-actions">
                 <button 
+                  onClick={handleAddToCart}
                   className="btn-add-cart-large" 
-                  disabled={product.stock === 0}
+                  disabled={product.stock === 0 || adding}
                 >
-                  {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+                  {adding ? 'Adding to Cart...' : product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
                 </button>
               </div>
             </div>
