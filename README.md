@@ -90,6 +90,11 @@ Open [http://localhost:5173](http://localhost:5173) in your browser to access th
   - Extended `Customer` schema with MongoDB `ObjectId` array referencing `Product` (`ref: "Product"`).
   - Built protected REST APIs: `POST /wishlist/:productId` (with `409 Conflict` duplicate prevention), `GET /wishlist` (using Mongoose `.populate()`), and `DELETE /wishlist/:productId`.
   - Created a dynamic React Wishlist Page (`/wishlist`), Wishlist Card components, Navbar badge count, and UI states (**Loading**, **Empty** with `[ Browse Products ]`, and **Error** with `[ Try Again ]`).
+- **Lab 05 — Shopping Cart & Global State**: Implemented full-stack cart management:
+  - Extended `Customer` schema with `cart` array holding `product` ObjectId references and `quantity` fields.
+  - Built protected REST APIs: `POST /cart/:productId` (adds item / increments quantity), `GET /cart` (populates product references), `PATCH /cart/:productId` (updates quantity with stock limits), and `DELETE /cart/:productId`.
+  - Introduced React Context API (`CartContext.jsx`) for application-wide global cart state with derived values (`totalCount` and `subtotal`).
+  - Created dynamic Shopping Cart Page (`/cart`), `[-]` / `[+]` quantity controls, Order Summary box, Navbar badge count, and UI lifecycle states (**Loading**, **Empty** with `[ Browse Products ]`, and **Error** with `[ Try Again ]`).
 
 ---
 
