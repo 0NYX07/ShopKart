@@ -33,4 +33,26 @@ export const removeFromWishlist = (productId) => {
   return api.delete(`/wishlist/${productId}`);
 };
 
+// --- Lab 05: Cart API Service Helpers ---
+
+// Add product to cart (or increment quantity)
+export const addToCart = (productId) => {
+  return api.post(`/cart/${productId}`);
+};
+
+// Fetch current user's cart with populated product details
+export const getCart = () => {
+  return api.get('/cart');
+};
+
+// Update cart item quantity
+export const updateCartQuantity = (productId, quantity) => {
+  return api.patch(`/cart/${productId}`, { quantity });
+};
+
+// Remove product from cart
+export const removeFromCart = (productId) => {
+  return api.delete(`/cart/${productId}`);
+};
+
 export default api;
