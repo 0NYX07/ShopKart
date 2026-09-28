@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api, { getWishlist } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 function Navbar({ wishlistCount }) {
   const navigate = useNavigate();
+  const { totalCount } = useCart();
   const [count, setCount] = useState(wishlistCount ?? 0);
 
   useEffect(() => {
@@ -42,6 +44,9 @@ function Navbar({ wishlistCount }) {
         <Link to="/products" className="nav-item">Products</Link>
         <Link to="/wishlist" className="nav-item nav-wishlist">
           Wishlist {count > 0 && <span className="wishlist-badge">{count}</span>}
+        </Link>
+        <Link to="/cart" className="nav-item nav-cart">
+          Cart {totalCount > 0 && <span className="cart-badge">{totalCount}</span>}
         </Link>
         <button onClick={handleLogout} className="logout-btn">
           Logout
