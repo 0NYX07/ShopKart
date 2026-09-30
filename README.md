@@ -61,7 +61,7 @@ Modern e-commerce platforms require seamless integration between **secure user a
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/TheVicky1/ShopKart.git
+git clone https://github.com/0NYX07/ShopKart.git
 cd ShopKart
 
 # 2. Setup and launch Backend Server
@@ -383,7 +383,7 @@ GET /customers/me (Cookie auto-attached) ──► auth.middleware.js (protect)
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/TheVicky1/ShopKart.git
+git clone https://github.com/0NYX07/ShopKart.git
 cd ShopKart/backend
 npm install
 cd ../frontend
