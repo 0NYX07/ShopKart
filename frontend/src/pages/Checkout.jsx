@@ -38,7 +38,7 @@ const loadRazorpayScript = () => {
 
 function Checkout() {
   const navigate = useNavigate();
-  const { cartItems, loading: cartLoading, subtotal, totalCount, fetchCart } = useCart();
+  const { cartItems, loading: cartLoading, subtotal, totalCount, fetchCart, clearCartState } = useCart();
 
   // Authentication check state
   const [authChecking, setAuthChecking] = useState(true);
@@ -251,7 +251,10 @@ function Checkout() {
             if (verifyRes.data && verifyRes.data.success) {
               // Successfully verified by backend! Mark order as paid in UI
               setVerifiedOrder(verifyRes.data.order);
-              // Refresh cart state to reflect the cart cleared on the backend
+              // Clear local global cart state immediately and re-fetch to synchronize with backend
+              if (typeof clearCartState === 'function') {
+                clearCartState();
+              }
               if (typeof fetchCart === 'function') {
                 fetchCart();
               }

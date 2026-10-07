@@ -460,10 +460,11 @@ const verifyPayment = async (req, res) => {
         }
 
         try {
-            // 10. Mark order as 'PAID', order status as 'PLACED', and persist razorpayPaymentId
+            // 10. Mark order as 'PAID', order status as 'PLACED', and persist razorpayPaymentId and razorpaySignature
             order.paymentStatus = 'PAID';
             order.status = 'PLACED';
             order.razorpayPaymentId = razorpayPaymentId;
+            order.razorpaySignature = razorpaySignature;
             if (session) {
                 await order.save({ session });
             } else {

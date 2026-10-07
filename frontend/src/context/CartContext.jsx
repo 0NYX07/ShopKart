@@ -83,6 +83,11 @@ export function CartProvider({ children }) {
     }
   };
 
+  // Handler to clear global cart state immediately (e.g. on successful order payment)
+  const clearCartState = () => {
+    setCartItems([]);
+  };
+
   // Derived state calculations (not stored separately in DB or state)
   // 1. Total Count = sum of all quantities
   const totalCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
@@ -102,6 +107,7 @@ export function CartProvider({ children }) {
         totalCount,
         subtotal,
         fetchCart,
+        clearCartState,
         addToCartHandler,
         updateQuantityHandler,
         removeFromCartHandler

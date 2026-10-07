@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children }) => {
     api.get('/customers/me')
       .then((res) => {
         if (isMounted) {
-          if (res.data && res.data.success) {
+          if (res.status >= 200 && res.status < 300 && res.data) {
             setIsAuthenticated(true);
           } else {
             setIsAuthenticated(false);
