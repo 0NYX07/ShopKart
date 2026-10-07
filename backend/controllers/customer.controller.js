@@ -5,13 +5,14 @@ const generateToken = require('../utils/generateToken');
 // Controller for registering a new customer
 const registerCustomer = async (req, res) => {
     try {
-        const { fullName, email, password, phone } = req.body;
+        const fullName = req.body.fullName || req.body.name;
+        const { email, password, phone } = req.body;
 
         // 1. Check whether all required fields are present
         if (!fullName || !email || !password || !phone) {
             return res.status(400).json({
                 success: false,
-                message: 'All fields (fullName, email, password, phone) are required.'
+                message: 'All fields (fullName/name, email, password, phone) are required.'
             });
         }
 

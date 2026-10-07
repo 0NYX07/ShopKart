@@ -112,9 +112,9 @@ function OrderDetails() {
                 </span>
                 <span
                   className={
-                    order.paymentStatus === 'paid' || order.paymentStatus === 'PAID'
+                    order.paymentStatus === 'PAID'
                       ? 'order-badge-paid'
-                      : order.paymentStatus === 'failed' || order.paymentStatus === 'FAILED'
+                      : order.paymentStatus === 'FAILED'
                       ? 'order-badge-failed'
                       : 'order-badge-pending'
                   }

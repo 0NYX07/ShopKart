@@ -102,9 +102,9 @@ function Orders() {
                 : 'N/A';
 
               const statusBadgeClass =
-                order.paymentStatus === 'paid'
+                order.paymentStatus === 'PAID'
                   ? 'order-badge-paid'
-                  : order.paymentStatus === 'failed'
+                  : order.paymentStatus === 'FAILED'
                   ? 'order-badge-failed'
                   : 'order-badge-pending';
 

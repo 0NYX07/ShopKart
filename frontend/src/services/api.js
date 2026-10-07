@@ -77,4 +77,15 @@ export const getOrderById = (id) => {
   return api.get(`/orders/${id}`);
 };
 
+// Record payment failure from gateway or client
+export const markPaymentFailed = (failureData) => {
+  return api.post('/orders/payment-failed', failureData);
+};
+
+// Retry payment for an existing pending or failed order
+export const retryPayment = (orderId) => {
+  return api.post(`/orders/${orderId}/retry-payment`);
+};
+
 export default api;
+

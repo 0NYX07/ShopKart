@@ -144,7 +144,7 @@ const createOrder = async (req, res) => {
             shippingAddress: shippingResult.shippingAddress,
             totalAmount: cartResult.totalAmount,
             status: 'PENDING_PAYMENT',
-            paymentStatus: 'pending'
+            paymentStatus: 'PENDING'
         });
 
         return res.status(201).json({
@@ -203,14 +203,14 @@ const createPaymentOrder = async (req, res) => {
             });
         }
 
-        // 4. Create persistent ShopKart Order with status 'PENDING_PAYMENT' and paymentStatus 'pending'
+        // 4. Create persistent ShopKart Order with status 'PENDING_PAYMENT' and paymentStatus 'PENDING'
         createdOrder = await Order.create({
             user: customer._id,
             items: cartResult.orderItems,
             shippingAddress: shippingResult.shippingAddress,
             totalAmount: cartResult.totalAmount,
             status: 'PENDING_PAYMENT',
-            paymentStatus: 'pending'
+            paymentStatus: 'PENDING'
         });
 
         // 5. Load Razorpay client configuration
@@ -382,7 +382,7 @@ const verifyPayment = async (req, res) => {
         }
 
         // 7. Handle idempotency: if order is already marked as paid, return safely without deducting stock again
-        if (order.paymentStatus === 'paid') {
+        if (order.paymentStatus === 'PAID') {
             return res.status(200).json({
                 success: true,
                 message: 'Payment already verified successfully',
@@ -459,23 +459,42 @@ const verifyPayment = async (req, res) => {
             });
         }
 
-        // 10. Mark order as 'paid', order status as 'PLACED', and persist razorpayPaymentId
-        order.paymentStatus = 'paid';
-        order.status = 'PLACED';
-        order.razorpayPaymentId = razorpayPaymentId;
-        if (session) {
-            await order.save({ session });
-        } else {
-            await order.save();
-        }
+        try {
+            // 10. Mark order as 'PAID', order status as 'PLACED', and persist razorpayPaymentId
+            order.paymentStatus = 'PAID';
+            order.status = 'PLACED';
+            order.razorpayPaymentId = razorpayPaymentId;
+            if (session) {
+                await order.save({ session });
+            } else {
+                await order.save();
+            }
 
-        // 11. Clear authenticated customer's cart
-        if (session) {
-            await Customer.findByIdAndUpdate(userId, { $set: { cart: [] } }, { session });
-            await session.commitTransaction();
-            session.endSession();
-        } else {
-            await Customer.findByIdAndUpdate(userId, { $set: { cart: [] } });
+            // 11. Clear authenticated customer's cart
+            if (session) {
+                await Customer.findByIdAndUpdate(userId, { $set: { cart: [] } }, { session });
+                await session.commitTransaction();
+                session.endSession();
+            } else {
+                await Customer.findByIdAndUpdate(userId, { $set: { cart: [] } });
+            }
+        } catch (finalizeErr) {
+            if (session) {
+                await session.abortTransaction();
+                session.endSession();
+            } else {
+                // Compensating rollback for deducted items if finalization fails
+                for (const deducted of deductedItems) {
+                    try {
+                        await Product.findByIdAndUpdate(deducted.productId, {
+                            $inc: { stock: deducted.quantity }
+                        });
+                    } catch (rollbackErr) {
+                        // ignore rollback error
+                    }
+                }
+            }
+            throw finalizeErr;
         }
 
         // 12. Send success response with finalized paid order
@@ -576,10 +595,206 @@ const getOrderById = async (req, res) => {
     }
 };
 
+
+/**
+ * Controller to record a payment failure event from gateway/client (POST /orders/payment-failed).
+ */
+const markPaymentFailed = async (req, res) => {
+    try {
+        // 1. Verify authenticated user
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({
+                success: false,
+                message: 'Not authorized'
+            });
+        }
+
+        const orderId = req.body.orderId || req.body.shopKartOrderId;
+        if (!orderId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Order ID is required'
+            });
+        }
+
+        // 2. Validate MongoDB ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(orderId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid order ID format'
+            });
+        }
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Order not found'
+            });
+        }
+
+        // 3. Verify order ownership
+        if (order.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not authorized to update this order'
+            });
+        }
+
+        // 4. Do not mark an already paid order as failed
+        if (order.paymentStatus === 'PAID') {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot mark an already paid order as failed'
+            });
+        }
+
+        // 5. Idempotent check if already failed
+        if (order.paymentStatus === 'FAILED') {
+            return res.status(200).json({
+                success: true,
+                message: 'Order payment is already marked as failed',
+                order
+            });
+        }
+
+        // 6. Update paymentStatus and order status to FAILED
+        order.paymentStatus = 'FAILED';
+        order.status = 'FAILED';
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Order payment marked as failed',
+            order
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error while marking payment as failed'
+        });
+    }
+};
+
+/**
+ * Controller to retry payment for an existing PENDING or FAILED order (POST /orders/:id/retry-payment).
+ */
+const retryPayment = async (req, res) => {
+    try {
+        // 1. Verify authenticated user
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({
+                success: false,
+                message: 'Not authorized'
+            });
+        }
+
+        const { id } = req.params;
+
+        // 2. Validate MongoDB ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid order ID format'
+            });
+        }
+
+        const order = await Order.findById(id);
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Order not found'
+            });
+        }
+
+        // 3. Verify order ownership
+        if (order.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not authorized to retry payment for this order'
+            });
+        }
+
+        // 4. Verify order has not already been paid
+        if (order.paymentStatus === 'PAID') {
+            return res.status(400).json({
+                success: false,
+                message: 'Order has already been paid'
+            });
+        }
+
+        // 5. Verify live stock for each item in historical snapshot
+        for (const item of order.items) {
+            const product = await Product.findById(item.product);
+            if (!product) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Product "${item.name}" is no longer available in the store.`
+                });
+            }
+            if (product.stock < item.quantity) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Insufficient stock for "${product.name}". Available: ${product.stock}, requested: ${item.quantity}.`
+                });
+            }
+        }
+
+        // 6. Load Razorpay gateway client
+        let razorpay;
+        try {
+            razorpay = require('../config/razorpay');
+        } catch (configError) {
+            return res.status(500).json({
+                success: false,
+                message: 'Payment gateway configuration error. Razorpay is not configured on the server.'
+            });
+        }
+
+        // 7. Create new Razorpay payment order
+        const amountInPaise = Math.round(order.totalAmount * 100);
+        const razorpayOptions = {
+            amount: amountInPaise,
+            currency: 'INR',
+            receipt: `rcpt_retry_${order._id.toString().slice(-8)}_${Date.now()}`
+        };
+
+        const razorpayOrder = await razorpay.orders.create(razorpayOptions);
+
+        // 8. Associate new Razorpay order ID and reset status to PENDING
+        order.razorpayOrderId = razorpayOrder.id;
+        order.paymentStatus = 'PENDING';
+        order.status = 'PENDING_PAYMENT';
+        await order.save();
+
+        // 9. Send checkout configuration back to client
+        return res.status(200).json({
+            success: true,
+            message: 'Payment retry initialized successfully',
+            shopKartOrderId: order._id,
+            orderId: order._id,
+            razorpayOrderId: razorpayOrder.id,
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            key: process.env.RAZORPAY_KEY_ID,
+            razorpayKeyId: process.env.RAZORPAY_KEY_ID
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error while initializing payment retry'
+        });
+    }
+};
+
 module.exports = {
     createOrder,
     createPaymentOrder,
     verifyPayment,
     getMyOrders,
-    getOrderById
+    getOrderById,
+    markPaymentFailed,
+    retryPayment
 };

@@ -89,11 +89,11 @@ const orderSchema = new mongoose.Schema({
         required: true,
         min: [0, 'Total amount cannot be negative']
     },
-    // Payment status tracking
+    // Payment status tracking (Normalized strictly to uppercase as required)
     paymentStatus: {
         type: String,
-        enum: ['pending', 'paid', 'failed', 'PENDING', 'PAID', 'FAILED'],
-        default: 'pending'
+        enum: ['PENDING', 'PAID', 'FAILED'],
+        default: 'PENDING'
     },
     // Order lifecycle status tracking
     status: {
@@ -101,6 +101,7 @@ const orderSchema = new mongoose.Schema({
         enum: [
             'PENDING_PAYMENT',
             'PLACED',
+            'FAILED',
             'CONFIRMED',
             'SHIPPED',
             'DELIVERED'

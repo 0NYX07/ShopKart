@@ -6,7 +6,9 @@ const {
     createPaymentOrder,
     verifyPayment,
     getMyOrders,
-    getOrderById
+    getOrderById,
+    markPaymentFailed,
+    retryPayment
 } = require('../controllers/order.controller');
 
 // All order endpoints require authentication via protect middleware
@@ -26,4 +28,11 @@ router.post('/create-payment-order', protect, createPaymentOrder);
 // Route: POST /orders/verify-payment (Razorpay payment signature verification for Lab 06)
 router.post('/verify-payment', protect, verifyPayment);
 
+// Route: POST /orders/payment-failed (Mark order payment as failed)
+router.post('/payment-failed', protect, markPaymentFailed);
+
+// Route: POST /orders/:id/retry-payment (Retry payment for pending/failed order)
+router.post('/:id/retry-payment', protect, retryPayment);
+
 module.exports = router;
+

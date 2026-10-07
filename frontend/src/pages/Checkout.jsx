@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useCart } from '../context/CartContext';
-import api, { createPaymentOrder, verifyPayment } from '../services/api';
+import api, { createPaymentOrder, verifyPayment, markPaymentFailed } from '../services/api';
 
 /**
   * Dynamically loads the official Razorpay Checkout SDK script.
@@ -275,7 +275,7 @@ function Checkout() {
           ondismiss: function () {
             setIsSubmitting(false);
             setDismissMessage(
-              'Payment popup was dismissed. Your order remains pending. You can retry payment anytime.'
+              'Payment popup was closed. Your order was not finalized. You can return to checkout or retry payment anytime.'
             );
           }
         }
@@ -291,6 +291,13 @@ function Checkout() {
           'Payment failed at the gateway. Please try again with another method.'
         );
         setIsSubmitting(false);
+        // Notify backend to mark order as FAILED
+        markPaymentFailed({
+          orderId: orderId,
+          error: failureResponse.error
+        }).catch(() => {
+          // Failure update error caught silently
+        });
       });
 
       rzpInstance.open();
@@ -329,7 +336,7 @@ function Checkout() {
               <p>Thank you for your purchase. Your order has been placed successfully.</p>
               <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <span className="order-lifecycle-badge">Order: {verifiedOrder.status || 'PLACED'}</span>
-                <span className="paid-badge">Payment: {verifiedOrder.paymentStatus || 'paid'}</span>
+                <span className="paid-badge">Payment: {verifiedOrder.paymentStatus || 'PAID'}</span>
               </div>
             </div>
 
