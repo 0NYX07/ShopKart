@@ -106,12 +106,15 @@ function OrderDetails() {
                 </p>
               </div>
 
-              <div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <span className="order-lifecycle-badge" style={{ fontSize: '0.9rem', padding: '6px 14px' }}>
+                  Order Status: {order.status || 'PLACED'}
+                </span>
                 <span
                   className={
-                    order.paymentStatus === 'paid'
+                    order.paymentStatus === 'paid' || order.paymentStatus === 'PAID'
                       ? 'order-badge-paid'
-                      : order.paymentStatus === 'failed'
+                      : order.paymentStatus === 'failed' || order.paymentStatus === 'FAILED'
                       ? 'order-badge-failed'
                       : 'order-badge-pending'
                   }
@@ -182,6 +185,12 @@ function OrderDetails() {
                     <strong>Razorpay Order ID:</strong>{' '}
                     <span style={{ fontFamily: 'monospace' }}>{order.razorpayOrderId}</span>
                   </p>
+                  {order.razorpayPaymentId && (
+                    <p style={{ marginTop: '8px' }}>
+                      <strong>Razorpay Payment ID:</strong>{' '}
+                      <span style={{ fontFamily: 'monospace' }}>{order.razorpayPaymentId}</span>
+                    </p>
+                  )}
                 </div>
               </div>
             )}

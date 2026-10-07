@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addToWishlist, removeFromWishlist } from '../services/api';
 import { useCart } from '../context/CartContext';
@@ -12,6 +12,11 @@ function ProductCard({ product, initialInWishlist = false, onWishlistUpdate }) {
   const [addingToCart, setAddingToCart] = useState(false);
   const [cartMsg, setCartMsg] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Keep internal wishlist heart indicator synced with incoming props
+  useEffect(() => {
+    setInWishlist(initialInWishlist);
+  }, [initialInWishlist]);
 
   // Check if current product is already in global cart state
   const cartEntry = cartItems.find((item) => item.product?._id === product._id);

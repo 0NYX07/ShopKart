@@ -1376,6 +1376,16 @@ body {
   text-transform: uppercase;
 }
 
+.order-lifecycle-badge {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
 .order-history-body {
   padding: 20px 24px;
 }

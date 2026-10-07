@@ -129,7 +129,10 @@ function Orders() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span className="order-lifecycle-badge">
+                        {order.status || 'PLACED'}
+                      </span>
                       <span className={statusBadgeClass}>
                         {order.paymentStatus}
                       </span>

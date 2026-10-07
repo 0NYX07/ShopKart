@@ -23,6 +23,9 @@ const orderItemSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: [1, 'Quantity must be at least 1']
+    },
+    image: {
+        type: String
     }
 }, { _id: false });
 
@@ -86,12 +89,28 @@ const orderSchema = new mongoose.Schema({
         required: true,
         min: [0, 'Total amount cannot be negative']
     },
+    // Payment status tracking
     paymentStatus: {
         type: String,
-        enum: ['pending', 'paid', 'failed'],
+        enum: ['pending', 'paid', 'failed', 'PENDING', 'PAID', 'FAILED'],
         default: 'pending'
     },
+    // Order lifecycle status tracking
+    status: {
+        type: String,
+        enum: [
+            'PENDING_PAYMENT',
+            'PLACED',
+            'CONFIRMED',
+            'SHIPPED',
+            'DELIVERED'
+        ],
+        default: 'PENDING_PAYMENT'
+    },
     razorpayOrderId: {
+        type: String
+    },
+    razorpayPaymentId: {
         type: String
     }
 }, {

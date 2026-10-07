@@ -199,13 +199,11 @@ function Checkout() {
         return;
       }
 
-      const {
-        orderId,
-        razorpayOrderId,
-        amount,
-        currency,
-        razorpayKeyId
-      } = response.data;
+      const orderId = response.data.orderId || response.data.shopKartOrderId;
+      const razorpayOrderId = response.data.razorpayOrderId;
+      const amount = response.data.amount;
+      const currency = response.data.currency;
+      const razorpayKeyId = response.data.razorpayKeyId || response.data.key;
 
       // 3. Dynamically load the Razorpay Checkout SDK script
       const isScriptLoaded = await loadRazorpayScript();
@@ -242,6 +240,7 @@ function Checkout() {
             // Send payment details to backend for cryptographic signature verification
             const verifyPayload = {
               orderId: orderId,
+              shopKartOrderId: orderId,
               razorpay_order_id: razorpayResponse.razorpay_order_id,
               razorpay_payment_id: razorpayResponse.razorpay_payment_id,
               razorpay_signature: razorpayResponse.razorpay_signature
@@ -328,8 +327,9 @@ function Checkout() {
               <div className="payment-success-icon">🎉</div>
               <h2>Payment Completed & Verified!</h2>
               <p>Thank you for your purchase. Your order has been placed successfully.</p>
-              <div style={{ marginTop: '12px' }}>
-                <span className="paid-badge">Status: {verifiedOrder.paymentStatus}</span>
+              <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <span className="order-lifecycle-badge">Order: {verifiedOrder.status || 'PLACED'}</span>
+                <span className="paid-badge">Payment: {verifiedOrder.paymentStatus || 'paid'}</span>
               </div>
             </div>
 
@@ -342,6 +342,12 @@ function Checkout() {
                 <div className="order-detail-label">Razorpay Order ID</div>
                 <div className="order-detail-value">{verifiedOrder.razorpayOrderId}</div>
               </div>
+              {verifiedOrder.razorpayPaymentId && (
+                <div className="order-detail-item">
+                  <div className="order-detail-label">Razorpay Payment ID</div>
+                  <div className="order-detail-value">{verifiedOrder.razorpayPaymentId}</div>
+                </div>
+              )}
               <div className="order-detail-item">
                 <div className="order-detail-label">Total Amount Paid</div>
                 <div className="order-detail-value">₹{verifiedOrder.totalAmount}</div>
@@ -371,7 +377,14 @@ function Checkout() {
               ))}
             </div>
 
-            <div style={{ marginTop: '30px', textAlign: 'center' }}>
+            <div style={{ marginTop: '30px', textAlign: 'center', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => navigate('/orders')}
+                className="btn-view-details"
+                style={{ padding: '12px 24px', fontSize: '1rem' }}
+              >
+                View My Orders
+              </button>
               <button
                 onClick={() => navigate('/products')}
                 className="btn-checkout"

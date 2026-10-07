@@ -89,7 +89,8 @@ const validateCartAndBuildItems = async (cart) => {
             product: product._id,
             name: product.name,
             price: itemPrice,
-            quantity: requestedQuantity
+            quantity: requestedQuantity,
+            image: product.image || ''
         });
     }
 
@@ -142,6 +143,7 @@ const createOrder = async (req, res) => {
             items: cartResult.orderItems,
             shippingAddress: shippingResult.shippingAddress,
             totalAmount: cartResult.totalAmount,
+            status: 'PENDING_PAYMENT',
             paymentStatus: 'pending'
         });
 
@@ -201,12 +203,13 @@ const createPaymentOrder = async (req, res) => {
             });
         }
 
-        // 4. Create persistent ShopKart Order with status 'pending'
+        // 4. Create persistent ShopKart Order with status 'PENDING_PAYMENT' and paymentStatus 'pending'
         createdOrder = await Order.create({
             user: customer._id,
             items: cartResult.orderItems,
             shippingAddress: shippingResult.shippingAddress,
             totalAmount: cartResult.totalAmount,
+            status: 'PENDING_PAYMENT',
             paymentStatus: 'pending'
         });
 
@@ -258,10 +261,12 @@ const createPaymentOrder = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Payment order created successfully',
+            shopKartOrderId: createdOrder._id,
             orderId: createdOrder._id,
             razorpayOrderId: razorpayOrder.id,
             amount: razorpayOrder.amount,
             currency: razorpayOrder.currency,
+            key: process.env.RAZORPAY_KEY_ID,
             razorpayKeyId: process.env.RAZORPAY_KEY_ID
         });
 
@@ -299,7 +304,7 @@ const verifyPayment = async (req, res) => {
         const userId = req.user._id.toString();
 
         // 2. Extract verification data from request body
-        const orderId = req.body.orderId || req.body.order_id;
+        const orderId = req.body.orderId || req.body.shopKartOrderId || req.body.order_id;
         const razorpayOrderId = req.body.razorpay_order_id || req.body.razorpayOrderId;
         const razorpayPaymentId = req.body.razorpay_payment_id || req.body.razorpayPaymentId;
         const razorpaySignature = req.body.razorpay_signature || req.body.razorpaySignature;
@@ -454,8 +459,10 @@ const verifyPayment = async (req, res) => {
             });
         }
 
-        // 10. Mark order as 'paid'
+        // 10. Mark order as 'paid', order status as 'PLACED', and persist razorpayPaymentId
         order.paymentStatus = 'paid';
+        order.status = 'PLACED';
+        order.razorpayPaymentId = razorpayPaymentId;
         if (session) {
             await order.save({ session });
         } else {

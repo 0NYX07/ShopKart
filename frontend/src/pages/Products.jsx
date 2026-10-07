@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import ProductCard from '../components/ProductCard';
 import SearchBar from '../components/SearchBar';
-import { getProducts } from '../services/api';
+import { getProducts, getWishlist } from '../services/api';
 
 function Products() {
   const [products, setProducts] = useState([]);
@@ -10,8 +10,25 @@ function Products() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState('');
+  const [wishlistIds, setWishlistIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  // Fetch user's wishlist to accurately reflect saved items on initial render
+  const fetchWishlistData = async () => {
+    try {
+      const res = await getWishlist();
+      if (res.data && res.data.wishlist) {
+        setWishlistIds(new Set(res.data.wishlist.map((item) => (item._id ? item._id.toString() : item.toString()))));
+      }
+    } catch {
+      // Unauthenticated or network error -> leave empty
+    }
+  };
+
+  useEffect(() => {
+    fetchWishlistData();
+  }, []);
 
   // Fetch products whenever search, category, or sort state changes
   useEffect(() => {
@@ -93,7 +110,12 @@ function Products() {
         {!loading && !error && products.length > 0 && (
           <div className="products-grid">
             {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+              <ProductCard
+                key={product._id}
+                product={product}
+                initialInWishlist={wishlistIds.has(product._id?.toString())}
+                onWishlistUpdate={fetchWishlistData}
+              />
             ))}
           </div>
         )}
