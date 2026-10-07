@@ -48,6 +48,7 @@ function Navbar({ wishlistCount }) {
         <Link to="/cart" className="nav-item nav-cart">
           Cart {totalCount > 0 && <span className="cart-badge">{totalCount}</span>}
         </Link>
+        <Link to="/orders" className="nav-item">Orders</Link>
         <button onClick={handleLogout} className="logout-btn">
           Logout
         </button>

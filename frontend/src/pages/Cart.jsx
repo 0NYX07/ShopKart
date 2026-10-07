@@ -201,7 +201,7 @@ function Cart() {
               </div>
 
               <button 
-                onClick={() => alert('Proceeding to Checkout! (Lab 06 feature)')}
+                onClick={() => navigate('/checkout')}
                 className="btn-checkout"
               >
                 Proceed to Checkout

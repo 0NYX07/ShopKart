@@ -55,4 +55,26 @@ export const removeFromCart = (productId) => {
   return api.delete(`/cart/${productId}`);
 };
 
+// --- Lab 06: Checkout & Orders API Service Helpers ---
+
+// Create payment order on server with validated shipping address
+export const createPaymentOrder = (shippingAddress) => {
+  return api.post('/orders/create-payment-order', { shippingAddress });
+};
+
+// Cryptographically verify Razorpay payment on server
+export const verifyPayment = (paymentData) => {
+  return api.post('/orders/verify-payment', paymentData);
+};
+
+// Fetch list of orders belonging to the authenticated user
+export const getMyOrders = () => {
+  return api.get('/orders');
+};
+
+// Fetch specific order details by ID belonging to the authenticated user
+export const getOrderById = (id) => {
+  return api.get(`/orders/${id}`);
+};
+
 export default api;
